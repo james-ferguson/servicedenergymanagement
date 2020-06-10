@@ -8,29 +8,32 @@ library(knitr)
 library(kableExtra)
 library(lubridate)
 library(DT)
+library(plotly)
 
-run_event_report <- function(params, o){
-
-  dir <- paste(getwd(),
-               paste("output/Event_Report_v1", gsub("-", "_", Sys.Date()), sep="_"),
-               paste0("oid_", o$id),
-               sep="/")
-  dir.create(dir,recursive = TRUE)
+run_generic_event_report <- function(owner, start_date, end_date = NA, name, utility, intermediary, dir, pool){
 
   file <- paste(dir, "index.html", sep="/")
 
-  tempReport <- file.path(tempdir(), "event_report.Rmd")
-
-  src_file <- paste(getwd(),"R/event_report.Rmd", sep = "/")
-
-  if(!file.exists(src_file)){
-    stop("file path problem")
-  }
+  tempReport <- file.path(tempdir(), "temp.Rmd")
+  src_file <- system.file("generic_event_report.Rmd", package = "servicedenergymanagement", lib.loc = NULL, mustWork = TRUE)
   file.copy(src_file, tempReport, overwrite = TRUE)
+
+  report_name <- paste0( name, ", from ", start_date, ifelse(is.na(end_date), " ongoing...", paste0(" ~ " , end_date) ))
+
+  event = tibble(owner_id = owner$id, start_date = start_date, end_date = end_date, name = report_name)
+
+  params = list(
+    owner = owner,
+    event = event,
+    utility = utility,
+    intermediary = intermediary,
+    title = paste(report_name, "<br>impact report for", owner$owner),
+    subtitle = paste("by kWIQly on behalf of ", intermediary)
+  )
 
   out <- rmarkdown::render(
     tempReport,
-    output_format = html_document(),
+    output_format = rmarkdown::html_document(),
     output_file = file, params = params, envir = new.env(parent = globalenv())
   )
 
@@ -41,67 +44,18 @@ run_event_report <- function(params, o){
 }
 
 
+owner <- dbq("SELECT o.* FROM v1.owner o WHERE id = ?oid;", oid = 211)
+dir = tempdir()
+out <- run_generic_event_report(owner, start_date = '2020-03-23', end_date = NA, name='Covid-19', utility = 'Gas', intermediary = 'TEC', dir, pool)
+pool::poolClose(pool)
+
+browseURL(out, browser = getOption("browser"),  encodeIfNeeded = FALSE)
+
+library(plotly)
 pool <- get_pool()
-oid = 211
-owner <- q("SELECT o.* FROM v1.owner o WHERE id = ?oid;", oid = oid)
-owner_events <-  q("SELECT oe.* FROM v1.owner_event oe WHERE oe.owner_id = ?oid ORDER BY owner_event DESC;", oid = oid)
+df <- dbq("SELECT mid, dm.ts, dm.power FROM v1.poi_meters pm, v1.poi p, prod.meter_day_48 dm WHERE pm.poi_id = p.id AND p.owner_id = ?oid AND dm.id = mid AND dm.ts > '2020-02-01';", oid = 211)
 
-owner_event_num = 1L # Temporary
-
-e <- owner_events[owner_events$owner_event==owner_event_num,]
-if(is.na(e$end_date))
-  e$end_date=Sys.Date()
-
-owner = owners[owners$id  == oid,],
-
-params = list(
-  owner = owner,
-  event = e,
-  utility = 'Gas'
-interlaken
+last_reads <- df %>% group_by(mid) %>% summarise(df = max(ts))
 
 
-prepare_content_params <- function(o, e, meter_events, ou_consolidation, ou_time_selected, ob){
-  e$name = 'Covid-19 2020'
-  e$credit = owner$intermediary
-  list(
-    event_start = e$start_date,
-    event_end = e$end_date,
-    set_title =  ,
-    owner_name = e$owner_name,
-    ae_dist_chart = ae_dist_chart(meter_events),
-    a_vs_e_chart = a_vs_e_chart(meter_events, NULL),
-    meter_events = meter_events,
-    intermediary_mention = paste("by kWIQly on behalf of ",owner$intermediary) ,
-    ouehp = ouehp(ou_time_selected) %>% maybe_show_event(e),
-    ouhp = ouhp(ou_consolidation, ou_time_selected) %>% maybe_show_event(e),
-    oucp = oucp(ou_time_selected) %>% maybe_show_event(e)
-  )
-}
-
-
-for(i in seq_along(owner_data$id)){
-    o = owner_data[i,]
-
-    print(o)
-
-    owner_event_num = 1L
-
-    owner_events <- read_owner_events_by_owner(o$id, pool)
-
-    e <- owner_events[owner_events$owner_event==owner_event_num,]
-
-    owner_name <- o$owner
-    event_name <- paste(e$name, "From", e$start_date, "~",ifelse(is.na(e$end_date), "Ongoing", e$end_date) )
-    meter_events <- read_meter_events_by_owner_event(o$id, owner_event_num,  pool) %>%
-      mutate(turndown = round(100 * actual / expected,1))
-
-    ou_consolidation <- read_owner_utility_consolidation(o$id, 'Gas', pool)
-
-    ou_time_selected <- ou_consolidation %>% filter_history_by_period("2")
-
-    params <- prepare_content_params(o, e, meter_events, ou_consolidation, ou_time_selected, ob)
-
-    owner_data$rel_file[i] <- run_event_report(params,o)
-
-}
+p <- chart(df) %>% add_markers(x=~ts, y=~power, color =~mid)

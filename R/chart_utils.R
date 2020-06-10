@@ -24,8 +24,8 @@ chart <- function(data = NULL, ...){
     p <- plot_ly(data, colors = cols,...)
   else
     p <-  plot_ly(colors = cols,...)
-  config(p,  displaylogo = FALSE, modeBarButtonsToRemove = c("sendDataToCloud", "lasso2d", "select2d", "pan2d", "zoomIn2d", "zoomOut2d"))# %>%
-   # plotly::layout(font = f, margin = m)
+  config(p,  displaylogo = FALSE, modeBarButtonsToRemove = c("sendDataToCloud", "lasso2d", "select2d", "pan2d", "zoomIn2d", "zoomOut2d")) %>%
+   plotly::layout(font = f, margin = m)
 }
 
 #' @export
@@ -197,6 +197,7 @@ high_low_forecast_errors <- function(ou_time_selected){
   mxts = max(ou_time_selected$ts)
   mnts = min(ou_time_selected$ts)
   ou_time_selected %>%
+    arrange(ts) %>%
     chart() %>%
     add_lines(x=~ts, y = ~p_e/1000, name = "∑ High Errors") %>%
     add_lines(x=~ts, y = ~n_e/1000, name = "∑ Low Errors") %>%
