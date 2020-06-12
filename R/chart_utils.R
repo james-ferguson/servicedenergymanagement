@@ -170,7 +170,7 @@ selected_period_oat_chart <- function(ou_consolidation, ou_time_selected){
   all <- ou_consolidation
   s <- ou_time_selected
 
-  yax <- 'kiloWatts)'
+  yax <- 'kiloWatts'
 
   if(max(all$kw,na.rm=TRUE) > 10000){
     yax <- 'Megawatts'
@@ -228,5 +228,135 @@ cumulative_waste_impact_chart <- function(ou_time_selected){
 
 }
 
+# single meter charts ####
+
+
+#' @export
+forecast_actual_profile_chart <- function(actual_profile, meter_pentiles, day){
+  ts= day$ts
+  dow = wday(ymd(ts))
+  dow_color = cols[dow]
+  xtitle = paste(wday(ymd(ts), label = TRUE), ts)
+
+  forecast <- meter_pentiles[meter_pentiles$dow==dow,] %>%
+    dow_target_profile(day) %>%
+    ts_data_to_longer_profile(dow)
+
+  actual <- actual_profile %>%
+    ts_data_to_longer_profile(dow)
+
+  chart() %>%
+    plotly::layout(
+      title = xtitle,
+      legend = list( orientation = 'h') ,
+      yaxis = list(title = 'kW', rangemode = 'tozero'),
+      xaxis = list(type = 'date', tickformat = "%H:%M", nticks=25, range = c(start,end)) #%a <br>
+    )  %>% add_trace(data=actual, x =~x, y = ~y, name = "Actual", type = "bar", offset = 0.5, colors =cols, alpha = 0.4, marker = list( color = dow_color, line = list(color = dow_color, alpha = 0.9,width = 0.1))) %>%
+    add_lines(data=forecast, x=~x, y = ~y, name = ~paste("forecast", oat, "°C"),color = I("midnightblue"), alpha = 0.2, line = list( shape="spline", smoothing=0.7), fill = 'tozeroy')
+
+}
+
+ts_data_to_longer_profile <- function(wide_profile, dow){
+  wide_profile <- wide_profile[1,]
+  p <- pivot_longer(wide_profile, cols=starts_with("h"), names_to = "tod", values_to = "y")
+  n = nrow(p)
+  time = ((1:n) - 1) * 1440 / n
+  hour = floor(time / 60)
+  min = 60*((time/60) - hour)
+  p$x = ISOdatetime(year=2001, month=09, day= dow, hour = hour, min = min , sec = 0, tz = "")
+  p
+}
+
+
+unselected_size = "7"
+unselected_symbol = "circle"
+
+s <- plotly::attrs_selected(
+  marker = list(size = 12, symbol = "circle-open-dot",opacity = 1,
+                showlegend = TRUE)
+)
+
+star_color_spec <- I("yellow")
+star_marker_spec <- list(size = 11,line= list(width=1, color = star_color_spec))
+star_alpha_spec = 0.15
+
+#' @export
+time_series_chart <- function(acc, source = "day_selection_chart"){
+  chart(acc, source = "day_selection_chart") %>%
+    highlight('plotly_selected', 'plotly_deselect', selected = s ) %>%
+    add_markers(
+      key =  ~ ts,
+      x =  ~ ts,
+      y = ~ kw,
+      color =  ~ dow,
+      marker=list( size = unselected_size, symbol=unselected_symbol, opacity=1),
+      showlegend = FALSE,
+      legendgroup = 'group1'
+    ) %>%
+    add_annotations(x = ~ts,
+                    y = ~kw,
+                    text = "",
+                    xref = "x",
+                    yref = "y",
+                    showarrow = TRUE,
+                    arrowwidth = 0.8,
+                    arrowcolor=~dow,
+                    arrowhead = 1.8,
+                    arrowsize = 1,
+                    standoff = 5,
+                    ax = ~ts,
+                    ay = ~expected,
+                    axref="x",
+                    ayref='y') %>%
+    plotly::layout(
+      yaxis = list(title = 'kW', rangemode = 'tozero'),
+      xaxis = list(title = '')
+    )
+}
+
+#' @export
+time_series_cumulative_chart <- function(acc, source = "day_selection_chart"){
+  chart(acc, source = "day_selection_chart") %>%
+    highlight('plotly_selected', 'plotly_deselect', selected = s) %>%
+    add_markers(
+      key =  ~ ts,
+      x =  ~ ts,
+      y = ~ cumsum(waste),
+      color =  ~ dow,
+      marker=list( size = unselected_size, symbol=unselected_symbol, opacity=1),
+      showlegend = FALSE,
+      legendgroup = 'group1'
+    ) %>%
+    plotly::layout(
+      yaxis = list(title = 'Cumulative Deviation (kWh)', rangemode = 'tozero'),
+      xaxis = list(title = '')
+    )
+}
+
+#' @export
+outside_temperature_chart <- function(acc, source = "day_selection_chart"){
+  chart(acc, source = "day_selection_chart") %>%
+    highlight('plotly_selected', 'plotly_deselect', selected = s) %>%
+    add_markers(
+      key =  ~ ts,
+      x =  ~ oat,
+      y = ~ kw,
+      color =  ~ dow,
+      showlegend = FALSE,
+      marker=list( size = unselected_size, symbol=unselected_symbol, opacity=1),
+      legendgroup = 'group1'
+    )  %>% add_lines(
+      key =  ~ ts,
+      x =  ~ oat,
+      y = ~ expected,
+      color =  ~ dow,
+      showlegend = FALSE,
+      legendgroup = 'group1'
+    )  %>%
+    plotly::layout(
+      yaxis = list(title = 'Power (kW)', rangemode = 'tozero'),
+      xaxis = list(title = '°C', rangemode = 'tozero')
+    )
+}
 
 

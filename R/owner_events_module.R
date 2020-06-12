@@ -3,24 +3,31 @@ owner_events_UI <- function(id){
   tabItem(
     tabName = 'EVENTS',
     h2("Events"),
+    p('Please choose existing event or define new requirements'),
     fluidRow(
-      column(width = 3,
-             event_choice_UI(ns('ecm'))
-             ),
-      column(width = 2,  downloadButton(ns("event_report"), "Download report")),
-      column(width = 2, radioButtons(ns('format'), 'Document format (currently only html functions)', c('HTML', 'Word','PDF'), inline = TRUE) ),
-      column(width = 2, textInput(ns('credit'), 'Credit On Behalf of ...', placeholder = "eg TEC"))
+      column(width = 6,
+             h3('Existing Event'),
+             event_choice_UI(ns('ecm')),
+             hr(),
+             helpText("A 'new normal' event affects expected consumption as the system 'learns', thus the evental impact of a 'new-normal' event tends to zero.
+    Otherwise the event is treated as exceptional  so experiences during the event are excluded from learning algoriths. The assumption is that perfromance will return to prior levels at the end of the event.
+    A new event whose dates overlap any previously defined event takes precedence (updates cease for the old event).")
+      ),
+      column(width = 6,
+             h3('New Event'),
+             event_creator_UI(ns('evc'))
+      )
     ),
     fluidRow(
       box(
         title = "Actual vs. Expected",
         width = 3,
-        plotly::plotlyOutput(ns("a_vs_e_plot"), height = 350)
+        plotly::plotlyOutput(ns("a_vs_e_plot"), height = 400)
       ),
       box(
         title = "Distribution of Turndown/Excess",
         width = 3,
-        plotly::plotlyOutput(ns("ae_dist_plot"), height = 350)
+        plotly::plotlyOutput(ns("ae_dist_plot"), height = 400)
       ),
       tabBox(
         title = tagList(shiny::icon("chart"), ""),
@@ -30,7 +37,11 @@ owner_events_UI <- function(id){
         tabPanel("Cumulative Deviation", plotly::plotlyOutput(ns("owner_utility_cusum_plot"), height = 400), value = "Era Chart")
       )
     ),
-
+    fluidRow(
+    column(width = 3, offset = 6,
+           radioButtons(ns('format'), 'Document format (currently only html)', c('HTML', 'Word','PDF'), inline = TRUE)),
+           column(width = 3, downloadButton(ns("event_report"), "Download report"))
+    ),
     single_row_selector_ui(ns("meter_events"))
   )
 
@@ -38,50 +49,40 @@ owner_events_UI <- function(id){
 
 owner_events_server <- function(id, owner, utility, ap){ # o oid owner match_ref
   moduleServer(id, function(input, output, session) {
+    event_data <- reactiveVal()
 
-    # Event Choice Module ####
-    event_data <- event_choice_server('ecm', owner, utility)
-    # Event Specific Charts ####
+    chosen_event_data <- event_choice_server('ecm', owner, utility)
+    created_event_data <- event_creator_server('evc', owner, utility)
+    observeEvent(chosen_event_data(), event_data(chosen_event_data()) )
+    observeEvent(created_event_data(), event_data(created_event_data()) )
 
-    observeEvent({event_data()},{
+
+    observeEvent(event_data(),{
       data <- req(event_data())
-      output$a_vs_e_plot <- renderPlotly(data$meter_events_summaries  %>% a_vs_e_chart(s =  session$userData$selected_meter()))
-      output$ae_dist_plot <- renderPlotly(data$meter_events_summaries  %>% ae_dist_chart())
-      output$owner_utility_error_history_plot <- renderPlotly(data$event_consolidation %>% high_low_forecast_errors() %>% maybe_show_event(data$event))
-      output$owner_utility_cusum_plot <- renderPlotly(data$event_consolidation %>% cumulative_waste_impact_chart() %>% maybe_show_event(data$event))
-      output$owner_utility_history_plot <- renderPlotly(data$event_consolidation %>% event_impact_chart() %>% maybe_show_event(data$event))
+      output$a_vs_e_plot <- renderPlotly(data$a_vs_e_plot)
+      output$ae_dist_plot <- renderPlotly(data$ae_dist_plot)
+      output$owner_utility_error_history_plot <- renderPlotly(data$owner_utility_error_history_plot)
+      output$owner_utility_cusum_plot <- renderPlotly(data$owner_utility_cusum_plot)
+      output$owner_utility_history_plot <- renderPlotly(data$owner_utility_history_plot)
+
     })
 
     output$event_report <- downloadHandler(
       filename = function() {
-        ext <-switch(
-          input$format, PDF = '.pdf', HTML = '.html', Word = '.docx'
-        )
-        owner_name = owner_name()
-        paste("Event_Report_", owner_name, "_", gsub("-", "_", Sys.Date()), ext, sep="") # For PDF output, change this to "report.pdf"
+        'index.html'
       },
       content = function(file) {
+        params <- req(event_data())
+        print(names(params))
+        params$title = paste("Event report", params$event$name, "<br>for", params$owner$owner)
         print(paste("Content file", file))
-        e <- req(e())
-        tempReport <- file.path(tempdir(), "event_report.Rmd")
-        file.copy("event_report.Rmd", tempReport, overwrite = TRUE)
+        tempReport <- file.path(tempdir(), "generic_event_report.Rmd")
 
-        params <- list(
-          event_start= e$start_date,
-          set_title =  paste("Event report", e$name,"for", req(owner_name())),
-          owner_name = owner_name(),
-          ae_dist_chart = ae_dist_chart(),
-          a_vs_e_chart =a_vs_e_chart(),
-          meter_events = meter_events(),
-          intermediary_mention = intermediary_mention(),
-          ouehp = ap$ouehp() %>% maybe_show_event(e),
-          ouhp = ap$ouhp() %>% maybe_show_event(e),
-          oucp = ap$oucp() %>% maybe_show_event(e)
-        )
-
+        src = system.file("generic_event_report.Rmd", package = "servicedenergymanagement", lib.loc = NULL, mustWork = TRUE)
+        file.copy(src, tempReport, overwrite = TRUE)
         out <- rmarkdown::render(
           tempReport,
-          output_format = switch(input$format, PDF = pdf_document(), HTML = html_document(), Word = word_document()),
+          output_format = rmarkdown::html_document(),
           output_file = file, params = params, envir = new.env(parent = globalenv()))
         file.rename(out, file)
       }

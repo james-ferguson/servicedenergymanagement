@@ -51,7 +51,7 @@ work_list <- function(universe){
 }
 
 
-meter_work_server <- function(id, owner, utility){
+data_server <- function(id, owner, utility){
 
   moduleServer(
     id,
@@ -59,11 +59,10 @@ meter_work_server <- function(id, owner, utility){
 
       #  Session Global ####
       session$userData$all = reactiveVal()
-      session$userData$work = reactiveVal()
-      session$userData$work_selection <- reactiveVal()
       session$userData$selected_meter <- reactiveVal()
       session$userData$owner_utility_meter_days <- reactiveVal()
       session$userData$owner_consolidation <- reactiveVal()
+      session$userData$selected_meter_history <- reactiveVal()
 
       # Owner Utility Specific Meters
 
@@ -73,17 +72,44 @@ meter_work_server <- function(id, owner, utility){
       },{
         utility <- req(utility())
         o = req(owner())
-        meters <- meter_statistics(o$oid, utility , pool)
+        meters <- meter_statistics(o$oid, utility)
         session$userData$all(meters)
-        session$userData$work(work_list(meters))
         session$userData$selected_meter(NULL)
         md <- meter_days_for_owner_utility(o$oid, utility)
         session$userData$owner_utility_meter_days(md)
         session$userData$owner_consolidation(md %>%
           consolidate_owner_utility_meter_days() %>%
-          mutate(dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))))
+            mutate(dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))))
 
       })
+
+      observeEvent({
+        session$userData$selected_meter()
+        session$userData$owner_utility_meter_days()
+      },
+      {
+        meter <- session$userData$selected_meter()
+
+
+
+        if(!is.null(meter)){
+          data <- req(session$userData$owner_utility_meter_days())
+
+          mh <- data[data$mid == meter$mid,]
+          df <- NULL
+          if(nrow(mh)>0)
+             df <- mutate(mh, dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")),
+                   waste = kw - expected )
+
+          session$userData$selected_meter_history(df)
+              shinyjs::show(id= "smd_panel", asis = TRUE)
+        } else{
+          session$userData$selected_meter_history(NULL)
+        }
+      })
+
+
+
 
     }
   )

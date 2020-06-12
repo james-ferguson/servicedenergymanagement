@@ -7,7 +7,7 @@ dbq <- function(sql, ...){
 
 #' @export
 meter_days_for_owner_utility <- function(oid, utility)
-  dbq("SELECT mid::text as mid, mpr, unnest(ts) as ts, unnest(oat)/1000 as oat, unnest(watts)/1000 as kw, unnest(fit)/1000 as expected FROM v1.poi_meters pm, v1.poi p WHERE pm.poi_id = p.id AND p.owner_id = ?oid and pm.utility = ?utility;", oid = oid, utility = utility)
+  dbq("SELECT mid::text as mid, mpr, unnest(ts) as ts, unnest(oat)/1000 as oat, unnest(watts)/1000 as kw, unnest(fit)/1000 as expected, unnest(model) as model FROM v1.poi_meters pm, v1.poi p WHERE pm.poi_id = p.id AND p.owner_id = ?oid and pm.utility = ?utility;", oid = oid, utility = utility)
 
 #' @export
 read_owner_utility_consolidation <- function(owner_id, utility){
@@ -31,21 +31,12 @@ read_owner_utility_budget_consolidation <- function(owner_id, utility){
 }
 
 #' @export
-meter_statistics <- function(oid, utility, pool){
-
-  if(oid == 0){
-    oid_spec = ";"
-    dots =list(utility = utility)
-  } else {
-    oid_spec = " AND o.id = ?oid;"
-    dots =list(utility = utility, oid = oid)
-  }
-
-  stats_meter_data <- dbq(paste0("SELECT pm.mid::text, pm.mpr, pm.activity, pm.update_status, update_status_prior, update_status_changed, pm.n, pm.nnz, pm.recent_zero, pm.power_to,
+meter_statistics <- function(oid, utility){
+  dbq("SELECT pm.mid::text, pm.mpr, pm.activity, pm.update_status, update_status_prior, update_status_changed, pm.n, pm.nnz, pm.recent_zero, pm.power_to,
   pm.summer_quartile, pm.winter_quartile, pm.convexity, pm.spearman, pm.madness,
   pm.latest_trend, pm.latest_duration, pm.prior_trend, pm.prior_duration, pm.big_trend, pm.big_duration,
   poi_id, poi.longitude, poi.latitude, o.id as oid, o.owner, pm.utility, pm.intermediary_id  FROM v1.poi_meters pm, v1.poi poi, v1.owner o
-  WHERE poi.id = pm.poi_id AND o.id = poi.owner_id AND utility = ?utility ", oid_spec), .dots = dots)
+  WHERE poi.id = pm.poi_id AND o.id = poi.owner_id AND utility = ?utility  AND o.id = ?oid;", utility = utility, oid = oid)
 }
 
 
@@ -53,6 +44,23 @@ meter_statistics <- function(oid, utility, pool){
 read_owner_events_by_owner <- function(oid)
   dbq("SELECT oe.* FROM v1.owner_event oe WHERE oe.owner_id = ?oid ORDER BY owner_event DESC;", oid = oid)
 
+
+profile_selection <- "SELECT id::text as mid, ts, power, h0000, h0030, h0100, h0130, h0200, h0230, h0300, h0330, h0400, h0430, h0500, h0530, h0600, h0630, h0700, h0730, h0800, h0830, h0900, h0930, h1000, h1030, h1100, h1130, h1200, h1230, h1300, h1330, h1400, h1430, h1500, h1530, h1600, h1630, h1700, h1730, h1800, h1830, h1900, h1930, h2000, h2030, h2100, h2130, h2200, h2230, h2300, h2330 FROM prod.meter_day_48 WHERE id = ?mid"
+
+#' @export
+day_profile <- function(mid, ts)
+  dbq(paste(profile_selection, "AND ts = ?ts;"), mid = as.numeric(mid), ts = ts)
+
+
+prop <- function(v, p)
+  if_else(p > 0, v/p, 0)
+
+#' @export
+meter_pentile_profiles <- function(mid){
+  pentiles <- dbq( "SELECT * FROM  v1.pentile_profiles WHERE mid = ?mid;", mid = as.numeric(mid))
+  rph = round((ncol(pentiles)-2)/24)
+  mutate_at(pentiles, vars(starts_with("h")), ~prop(. * rph, power))
+}
 
 #
 # sql = paste("WITH m AS (SELECT poi_id as poid, update_status, mid::text as mid, utility, intermediary_id as iid, trim(mpr::text) as mpr FROM v1.poi_meters),",

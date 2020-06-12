@@ -16,16 +16,11 @@ library(tidyr)
 library(crosstalk)
 library(DT)
 library(leaflet)
+library(knitr)
+library(kableExtra)
+library(leaflet.extras)
 #library(servicedenergymanagement) wait until packaged
 
-pool <- get_pool()
-onStop(function() { poolClose(pool) })
-
-options("lubridate.week.start" = 1)
-
-moduleServer <- function(id, module) {
-  shiny::callModule(module, id)
-}
 
 sourcerer <- function(){
   #wd <- getwd()
@@ -36,6 +31,16 @@ sourcerer <- function(){
   #setwd(wd)
 }
 sourcerer()
+
+pool <- get_pool()
+onStop(function() { poolClose(pool) })
+
+options("lubridate.week.start" = 1)
+
+moduleServer <- function(id, module) {
+  shiny::callModule(module, id)
+}
+
 
 
 icon_name_for_state <- function(update_status){

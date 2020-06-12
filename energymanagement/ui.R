@@ -88,6 +88,8 @@ body <- {
     div(
       id = "panelA",
       #shinyjs::hidden(div(id="single_meter_dispay", single_meter_diagnostics_UI("tm"))),
+      shinyjs::hidden(div(id="smd_panel",single_meter_display_UI('smd'))),
+
       tabItems(
         dashtab,
         workflow_UI('wf'),
@@ -97,7 +99,7 @@ body <- {
         pf_UI('pf'),
         nl_UI('nl'),
         nw_UI('nw'),
-        w_UI('wd'),
+        w_UI('w'),
         s_UI('s'),
         id_UI('id'),
         q_UI('q'),

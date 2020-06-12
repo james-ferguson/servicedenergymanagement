@@ -3,17 +3,26 @@ output:
   html_document:
     toc: true
     toc_depth: 2
-params:
+params: 
   owner: NULL
-  event: NULL
   utility: NULL
-  intermediary: NULL
-  subtitle: NULL
+  event: NULL
   title: NULL
-  owner_utility_meter_days: NULL
+  owner_utility_event_meter_days: NULL
+  displayable_consolidation: NULL
+  event_consolidation: NULL
+  meter_events_summaries: NULL
+  a_vs_e_plot: NULL
+  ae_dist_plot: NULL
+  owner_utility_error_history_plot: NULL
+  owner_utility_cusum_plot: NULL
+  owner_utility_history_plot: NULL
+  owner_utility_history_plot_in_context: NULL
+  oat_e_plot: NULL
 title: "`r params$title`"
-author: "`r params$subtitle`"
+author: "prepared by kWIQly"
 ---
+
 
 ***
 
@@ -22,42 +31,16 @@ author: "`r params$subtitle`"
 
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE) # 
 
+event = params$event
+event_start= event$start_date
 owner <- params$owner
 oid <- owner$id
 utility = params$utility
-event = params$event
+
 event_start = event$start_date
 event_end = ifelse(is.na(event$end_date), Sys.Date(), event$end_date)
 owner_name = owner$owner
 event_name = event$name
-
-if(is.null(params$owner_utility_meter_days)){
-  owner_utility_meter_days <- meter_days_for_owner_utility(oid, utility)
-} else{
-  owner_utility_meter_days <- params$owner_utility_meter_days
-}
- 
-
-owner_utility_event_meter_days <- filter_meter_events(owner_utility_meter_days, event)
-
-meter_events_summaries <- summarise_meter_days(owner_utility_meter_days)
-
-ou_consolidation <- consolidate_owner_utility_meter_days(owner_utility_meter_days)
-
-displayable_consolidation <- filter_history_by_period(ou_consolidation, "2") %>%
-  mutate(dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")))
-
-event_consolidation <- displayable_consolidation %>% 
-  filter(ts >= event_start, ts <= event_end)
-    
-
-ae_dist_chart = ae_dist_chart(meter_events_summaries)
-a_vs_e_chart = a_vs_e_chart(meter_events_summaries, NULL)
-ouehp = high_low_forecast_errors(event_consolidation) %>% maybe_show_event(event)
-ecic = event_context_impact_chart(displayable_consolidation) %>% maybe_show_event(event)
-ouhp = event_impact_chart(event_consolidation) %>% maybe_show_event(event)
-oucp = cumulative_waste_impact_chart(event_consolidation) %>% maybe_show_event(event)
-ouoat = selected_period_oat_chart(displayable_consolidation, event_consolidation)
 
   
   #  css: style.css
@@ -78,7 +61,7 @@ Note: Total meters considered are limited to the definition provided to us and t
 kWh_kg_CO2g_UK <- function(x)
   paste0(format(round(x*0.185),big.mark   = ","), " kg.CO2g")
 
-x = meter_events_summaries %>% mutate(change = ifelse(turndown >100, 1, -1)) %>%
+x = params$meter_events_summaries %>% mutate(change = ifelse(turndown >100, 1, -1)) %>%
   summarise(meters = n(),
             increased = sum(change>0,na.rm=TRUE),
             decreased = sum(change<0,na.rm=TRUE),
@@ -91,17 +74,17 @@ x = meter_events_summaries %>% mutate(change = ifelse(turndown >100, 1, -1)) %>%
 
 colnames(x) <- c("# Meters", "# Increased", "# Decreased", "Actual Total (MWh)", "Expected Total (MWh)", "Median Turndown to %", "Weighted Turndown %", "CO2g kg")
 
-  kable(x,format.args = list(big.mark = ",")) %>%
+  knitr::kable(x,format.args = list(big.mark = ",")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 11, fixed_thead = T)
 ```
 
 
 ## Timeline of Impact
 
-A time chart illustrates the total  `r owner_name` impact relative to normal for the day of week and weather conditions since the event started on `r event_start` (as indicated in green).
+This chart shows how actual  `r owner_name` consumption has changed relative to normal for the day of week and weather conditions since the event started on `r event_start` (the event period is indicated in green and the change is indicated by arrows).
 
 ```{r ouhp, echo=FALSE, out.height="100%", out.width="90%"}
-ouhp
+params$owner_utility_history_plot
 ```
 
 ## Timeline in recent year context
@@ -109,7 +92,7 @@ ouhp
 The event can be seen 'zoomed-out' in context of the rolling year, with dark lines indicating expected vs actual consumption.
 
 ```{r ecic, echo=FALSE, out.height="100%", out.width="90%"}
-ecic
+params$owner_utility_history_plot_in_context
 ```
 
 
@@ -119,10 +102,8 @@ A chart of consumption rate (power) vs outside air temperature shows highlighted
 
 
 ```{r ouoat, echo=FALSE, out.height="100%", out.width="90%"}
-ouoat
+params$oat_e_plot
 ```
-
-
 
 ## Range of responses
 
@@ -131,7 +112,7 @@ The following chart shows a distribution of responses, it is naturally more mean
 Note: If there are any meters where consumption has increased by over two-fold these will be shown on the extreme right side of the chart.  Complete values are recorded in the detail table below, which can be exported to .csv or spreadsheet.
 
 ```{r dist, echo=FALSE, out.height="100%", out.width="90%"}
-ae_dist_chart
+params$ae_dist_plot
 ```
 
 
@@ -148,7 +129,7 @@ By hovering on high purple markers the relatively poor performing meters can be 
 Interactive versions of analysis allow meter detail to be explored by clicking to drill down.
 
 ```{r a_vs_e, echo=FALSE, out.height="100%", out.width="90%"}
-print(a_vs_e_chart)
+params$a_vs_e_plot
 ```
 
 ## Impact by day of week
@@ -157,7 +138,7 @@ The impact will not typically be the same for each day of the week. So cumulativ
 
 
 ```{r oucp, echo=FALSE, out.height="100%", out.width="90%"}
-print(oucp)
+params$owner_utility_cusum_plot
 ```
 
 ## Typical impacts
@@ -168,7 +149,7 @@ During a 'global' event (i.e. one effecting all meters in the same sense) many e
 
 
 ```{r ouehp, echo=FALSE, out.height="100%", out.width="90%"}
-ouehp
+params$owner_utility_error_history_plot
 ```
 
 
@@ -189,7 +170,7 @@ Otherwise the table is ranked in descending turndown order - i.e. priorities are
 
 
 ```{r kable}
-meter_events_summaries %>% arrange(desc(turndown)) %>% rename(zeroes = recent_zero) %>% 
+params$meter_events_summaries %>% arrange(desc(turndown)) %>% 
   mutate(expected = round(expected), actual = round(actual)) %>% 
   DT::datatable(
       extensions = 'Buttons', options = list(
@@ -203,19 +184,16 @@ meter_events_summaries %>% arrange(desc(turndown)) %>% rename(zeroes = recent_ze
 
 ## Further Support
 
-This document has been prepared free of charge by kWIQly with a view to supporting clients during and following Covid-19. 
+This report by kWIQly remains experimental and was developed with a view to supporting clients during and following Covid-19. 
+Note: if you are only in receipt of this as a static webpage, an interactive app that shows supports drill-down and diagnosis is available.
 
-We believe that in addition to the distress & disruption individuals and businesses will be suffering, the energy manager has a tough time ahead, deciding how much to buy and on what basis, whether hedging is necessary, and whether further waves of infection will effect business etc. 
+We believe energy managers haves a tough time ahead, after the first wave of Covid-19. This will involve deciding how much to buy and negotiating the basis, whether hedging is necessary, while allowing for potential further waves of infection and/or systematic changes to business 'as normal'. 
 
-We hope to develop some scenario planning tools for our clients and to develop this specific solution further.
+We hope to develop some scenario planning tools for our clients and to develop this specific solution further, also to report on  user-defined 'exceptional periods' to cover arbitrary periods or events e.g. holidays in schools and universities etc. 
 
-It might also report on arbitrary periods e.g. holidays in schools and universities etc, it might need forecasting and scenario planning support or perhaps it should be more interactive as an app (e.g. to show individual meter charts as in the example above).
+Accordingly, we welcome feedback.
 
-Accordingly,
-
-We hope this helps when help is most needed and we always welcome feedback regarding your needs and concerns,
-
-Best wishes and stay safe,
+kind regards,
 
 the kWIQly team.
 
@@ -229,16 +207,16 @@ $(document).ready(function(){
 
 &nbsp;
 <hr/>
-<p style="text-align: center;">For support please contact George Catto</p>
-<p style="text-align: center;"><span style="color: #808080;"><em>George@kWIQly.com</em></span></p>
+<p style="text-align: center;">Please contact your distribution partner for support or kWIQly direct @</p>
+<p style="text-align: center;"><span style="color: #808080;"><em>info@kWIQly.com</em></span></p>
 
 <!-- Add icon library -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 
 <!-- Add font awesome icons -->
-<p style="text-align: center;">
-    <a href="https://www.linkedin.com/in/george-catto-6a0a4549/" class="fa fa-linkedin"></a>... Happy to connect on LinkedIn! 
+<p style="text-align: center;">Join us at Building Energy Intelligence Group on LinkedIn ...
+    <a href="https://www.linkedin.com/groups/4101399//" class="fa fa-linkedin"></a>
 </p>
 
 &nbsp;

@@ -1,5 +1,38 @@
 
 #' @export
+dow_target_profile <- function(day_pentiles, selected_day){
+
+  selected_day <- selected_day[1,]
+  print(selected_day)
+
+  day_oat = selected_day$oat*100
+  day_fit = selected_day$expected
+
+  index <- as.integer(sum(day_oat >  day_pentiles$oat))
+  b_index <- if_else(index == 0L, 1L, index)
+  a_index <- if_else(b_index == 5L, 5L, b_index+1L)
+  p_below <- day_pentiles[b_index,]
+  p_above <- day_pentiles[a_index,]
+
+  oat_spread = p_above$oat - p_below$oat
+
+  my_table <- tibble(oat = day_oat, index, b_index, a_index) %>%
+    mutate(above_lower = oat - p_below$oat,
+           raw_lower_prop = if_else(above_lower > 0 , above_lower / oat_spread, 1 ),
+           lower_prop = if_else(is.infinite(raw_lower_prop),0.5,raw_lower_prop) ) %>%
+    select(lower_prop)
+
+  p_below$w = my_table$lower_prop
+  p_above$w = 1-p_below$w
+
+  f <- bind_rows(
+    mutate_at(p_below, vars(starts_with("h")), ~`*`(., w*day_fit)) %>% select(starts_with("h")) ,
+    mutate_at(p_above, vars(starts_with("h")), ~`*`(., w*day_fit)) %>% select(starts_with("h")))
+
+  cbind(selected_day, t(colSums(f)))
+}
+
+#' @export
 filter_meter_events <- function(df, event){
   event_start = event$start_date
   event_end = ifelse(is.na(event$end_date), Sys.Date(), event$end_date)
@@ -42,7 +75,7 @@ lr <- function(df){
 
 calculate_recent_zeroes_by_mid <- function(df){
   nest_by(df, mid) %>%
-    mutate( recent_zero = count_recent_zero(data), last_reading = lr(data))
+    mutate( recent_zero = count_recent_zero(data), last_reading = lr(data)) %>% select(-data)
 }
 
 summarise_meter_days <- function(owner_utility_meter_days){

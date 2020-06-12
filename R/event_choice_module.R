@@ -29,7 +29,7 @@ event_choice_server <- function(id, owner, utility){ # o oid owner match_ref
     observeEvent(owner_events(), {
       oe <- req(owner_events())
       oec = list(oe$owner_event)
-      names(oec) <- paste(oe$name, "From", oe$start_date, "~",ifelse(is.na(oe$end_date), "Ongoing", oe$end_date) )
+      names(oec) <- paste(oe$name, ":", oe$start_date, "~",ifelse(is.na(oe$end_date), "Ongoing", oe$end_date) )
       updateSelectInput(session, inputId ="owner_events_choice", choices = oec)
     },ignoreNULL = TRUE)
 
@@ -46,23 +46,56 @@ event_choice_server <- function(id, owner, utility){ # o oid owner match_ref
     # ####
 
     event_data <- reactive({
-      event <- req(chosen_event())
-
-      owner_utility_event_meter_days <- filter_meter_events(session$userData$owner_utility_meter_days(), event)
-      displayable_consolidation <- session$userData$owner_consolidation() %>% filter_history_by_period("2") %>%
+      event = req(chosen_event())
+      owner = req(owner())
+      utility = req(utility())
+      owner_utility_event_meter_days = filter_meter_events(session$userData$owner_utility_meter_days(), event)
+      displayable_consolidation = session$userData$owner_consolidation() %>% filter_history_by_period("2") %>%
         mutate(dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")))
-      event_consolidation <- displayable_consolidation %>% filter_meter_events( event)
+      event_consolidation = displayable_consolidation %>% filter_meter_events( event)
 
-
-      list(
-        owner = owner,
-        utility = utility,
-        event = event,
-        owner_utility_event_meter_days = owner_utility_event_meter_days,
-        displayable_consolidation = displayable_consolidation,
-        event_consolidation = event_consolidation,
-        meter_events_summaries = summarise_meter_days(owner_utility_event_meter_days)
+      meter_events_summaries = summarise_meter_days(owner_utility_event_meter_days)
+      oat_e_plot=selected_period_oat_chart(displayable_consolidation, event_consolidation)
+      a_vs_e_plot = meter_events_summaries  %>% a_vs_e_chart(s =  session$userData$selected_meter())
+      ae_dist_plot = meter_events_summaries  %>% ae_dist_chart()
+      owner_utility_error_history_plot = event_consolidation %>% high_low_forecast_errors() %>% maybe_show_event(event)
+      owner_utility_cusum_plot = event_consolidation %>% cumulative_waste_impact_chart() %>% maybe_show_event(event)
+      owner_utility_history_plot = event_consolidation %>% event_impact_chart() %>% maybe_show_event(event)
+      owner_utility_history_plot_in_context= displayable_consolidation %>% event_impact_chart() %>% maybe_show_event(event)
+      e <- list(
+        owner,
+        utility,
+        event,
+        owner_utility_event_meter_days,
+        displayable_consolidation,
+        event_consolidation,
+        meter_events_summaries,
+        a_vs_e_plot,
+        ae_dist_plot,
+        owner_utility_error_history_plot,
+        owner_utility_cusum_plot,
+        owner_utility_history_plot,
+        owner_utility_history_plot_in_context,
+        oat_e_plot
       )
+
+      names(e) <- c(
+        "owner",
+        "utility",
+        "event",
+        "owner_utility_event_meter_days",
+        "displayable_consolidation",
+        "event_consolidation",
+        "meter_events_summaries",
+        "a_vs_e_plot",
+        "ae_dist_plot",
+        "owner_utility_error_history_plot",
+        "owner_utility_cusum_plot",
+        "owner_utility_history_plot",
+        "owner_utility_history_plot_in_context",
+        "oat_e_plot"
+      )
+      e
     })
 
     event_data

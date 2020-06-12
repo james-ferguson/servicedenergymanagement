@@ -157,7 +157,6 @@ account_period_server <- function(id, o, u){# o has oid owner match_ref
         {o(); u()},{
           u <- req(u())
           owner <- req(o())
-          print(owner)
           o <- owner$oid
           x <- owner$owner
           if(!ou_consolidation_exists(o, u, pool))

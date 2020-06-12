@@ -11,12 +11,16 @@ server <- function(session, input, output) {
   owner <- single_row_selector_server("owner_table", permitted)
   observeEvent(owner(), js$collapse("owner_selection_box") )
 
+
+
   ap <- account_period_server("ap", owner, utility)
 
-  meter_work_server('ws', owner, utility)
+  data_server('ds', owner, utility)
 
   workflow_server('wf')
   owner_events_server('events', owner, utility, ap)
+
+  single_meter_display_server('smd')
 
   nd_server('nd')
   np_server('np')
@@ -24,8 +28,9 @@ server <- function(session, input, output) {
   pf_server('pf')
   nl_server('nl')
   nw_server('nw')
-  w_server('wd')
+  w_server('w')#
   s_server('s')
+  nt_server('s')
   id_server('id')
   q_server('q')
   qa_server('qa')
