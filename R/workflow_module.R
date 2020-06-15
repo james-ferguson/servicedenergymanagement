@@ -1,3 +1,5 @@
+
+#' @export
 workflow_UI <- function(id){
   ns <- NS(id)
   tabItem(
@@ -12,6 +14,8 @@ workflow_UI <- function(id){
 
 }
 
+
+#' @export
 workflow_server <- function(id){
   moduleServer(id, function(input, output, session) {
   })

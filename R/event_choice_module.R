@@ -1,5 +1,7 @@
 
 
+
+#' @export
 event_choice_UI <- function(id){
   ns <- NS(id)
   selectInput(
@@ -10,6 +12,8 @@ event_choice_UI <- function(id){
   )
 }
 
+
+#' @export
 event_choice_server <- function(id){
   moduleServer(id, function(input, output, session) {
 

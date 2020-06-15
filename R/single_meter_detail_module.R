@@ -1,5 +1,7 @@
 
 
+
+#' @export
 single_meter_detail_UI <- function(id){
   ns <- NS(id)
       box(
@@ -25,9 +27,9 @@ single_meter_detail_server <- function(id){
       search_pairs <- urltools::param_get(urls = session$clientData$url_search,  parameter_names = c("mid", "mpr", "context"))
       md <- NULL
       if(!is.na(search_pairs$mid)){
-        md <- events::read_meter_detail_by_mid(search_pairs$mid, pool) # More efficient / discrete than by mpr
+        md <- read_meter_detail_by_mid(search_pairs$mid) # More efficient / discrete than by mpr
       } else if(!is.na(search_pairs$mpr)){
-        md <- events::read_meter_detail_by_mpr(search_pairs$mpr, pool)
+        md <- read_meter_detail_by_mpr(search_pairs$mpr)
       }
       req(md)
       if(nrow(md)>0 & !is.na(md$mid)){

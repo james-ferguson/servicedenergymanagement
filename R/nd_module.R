@@ -1,3 +1,4 @@
+#' @export
 nd_UI <- function(id){
   ns <- NS(id)
   tabItem(
@@ -8,6 +9,7 @@ nd_UI <- function(id){
 
 }
 
+#' @export
 nd_server <- function(id, df){
   moduleServer(id, function(input, output, session) {
     meter <- table_meter_selection_server('meters', df)

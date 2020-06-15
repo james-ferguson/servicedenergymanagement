@@ -1,3 +1,5 @@
+
+#' @export
 owner_events_UI <- function(id){
   ns <- NS(id)
   tabItem(
@@ -47,6 +49,8 @@ owner_events_UI <- function(id){
 
 }
 
+
+#' @export
 owner_events_server <- function(id){
   moduleServer(id, function(input, output, session) {
     event_data <- reactiveVal()

@@ -1,5 +1,7 @@
 
 
+
+#' @export
 data_server <- function(id){
 
   moduleServer(

@@ -1,5 +1,7 @@
 
 
+
+#' @export
 event_creator_UI <- function(id){
   ns <- NS(id)
   fluidRow(
@@ -13,6 +15,8 @@ event_creator_UI <- function(id){
   )
 }
 
+
+#' @export
 event_creator_server <- function(id){
   moduleServer(id, function(input, output, session) {
 

@@ -1,3 +1,4 @@
+#' @export
 nl_UI <- function(id){
   ns <- NS(id)
   tabItem(
@@ -17,6 +18,7 @@ nl_UI <- function(id){
 
 }
 
+#' @export
 nl_server <- function(id, df){
   moduleServer(id, function(input, output, session) {
     table_meter_selection_server('meters', df)
@@ -51,7 +53,7 @@ nl_server <- function(id, df){
 
 
 
-    weather_locations <- reactive(events::locations(pool) %>% select(id, lng=longitude, lat=latitude, postcode) %>% na.omit())
+    weather_locations <- reactive(locations() %>% select(id, lng=longitude, lat=latitude, postcode) %>% na.omit())
 
 
     observeEvent(input$locate, {

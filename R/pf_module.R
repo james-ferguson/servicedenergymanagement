@@ -1,3 +1,6 @@
+
+
+#' @export
 pf_UI <- function(id){
   ns <- NS(id)
   tabItem(
@@ -8,6 +11,8 @@ pf_UI <- function(id){
 
 }
 
+
+#' @export
 pf_server <- function(id, df){
   moduleServer(id, function(input, output, session) {
     meter <- table_meter_selection_server('meters', df)

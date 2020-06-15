@@ -43,11 +43,6 @@ coloured <- function(string, v, negate = FALSE){
     paste("<span style=\"color:blue\">", string,"</span>")
 }
 
-ou_consolidation_exists <- function(owner_id, utility, pool){
-  rows <- dbq("SELECT owner_id, utility FROM v1.owner_utility WHERE owner_id = ?owner_id AND utility = ?utility LIMIT 1;", owner_id = owner_id, utility = utility)
-  nrow(rows) > 0
-}
-
 filter_history_by_period <- function(ouc, period){
   today <- req(max(ouc$ts))
   ys <- as.Date(paste(format(Sys.Date(), "%Y"), "01-01", sep = "-"))
@@ -64,6 +59,7 @@ filter_history_by_period <- function(ouc, period){
   ouc %>% filter(ts >= tr[1], ts <= tr[2])
 }
 
+#' @export
 account_period_charts_UI <- function(id){
   ns <- NS(id)
   box(
@@ -98,6 +94,7 @@ account_period_charts_UI <- function(id){
     status = "success", solidHeader = TRUE, collapsible = FALSE)
 }
 
+#' @export
 account_period_UI2 <- function(id){
   ns <- NS(id)
   box(
@@ -114,6 +111,8 @@ account_period_UI2 <- function(id){
 }
 
 
+
+#' @export
 account_period_UI <- function(id){
   ns <- NS(id)
   ns_to <- function(n)
@@ -150,6 +149,8 @@ account_period_UI <- function(id){
 
 
 
+
+#' @export
 account_period_server <- function(id){
   moduleServer(
     id,
@@ -285,14 +286,14 @@ account_period_server <- function(id){
 
       #### end figures ####
 
-      ouhp <- reactive(events::ouhp(req(ou_consolidation()), req(ou_time_selected())))
-      ouoat <- reactive(events::ouoat(req(ou_consolidation()), req(ou_time_selected())))
-      ouehp <- reactive(events::ouehp(req(ou_time_selected())))
-      oucp <- reactive(events::oucp(req(ou_time_selected())))
-      output$owner_utility_oat_plot <- renderPlotly(ouoat())
-      output$owner_utility_error_history_plot <- renderPlotly(ouehp())
-      output$owner_utility_cusum_plot <- renderPlotly(oucp())
-      output$owner_utility_history_plot <- renderPlotly(ouhp())
+      # ouhp <- reactive(events::ouhp(req(ou_consolidation()), req(ou_time_selected())))
+      # ouoat <- reactive(events::ouoat(req(ou_consolidation()), req(ou_time_selected())))
+      # ouehp <- reactive(events::ouehp(req(ou_time_selected())))
+      # oucp <- reactive(events::oucp(req(ou_time_selected())))
+      # output$owner_utility_oat_plot <- renderPlotly(ouoat())
+      # output$owner_utility_error_history_plot <- renderPlotly(ouehp())
+      # output$owner_utility_cusum_plot <- renderPlotly(oucp())
+      # output$owner_utility_history_plot <- renderPlotly(ouhp())
 
       #### end charts ####
       }

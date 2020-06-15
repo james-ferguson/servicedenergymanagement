@@ -1,5 +1,7 @@
 
-user_can_access <- function(email, pool){
+
+
+user_can_access <- function(email){
   if(is.null(email))
     email <- "james@kwiqly.com"
 
@@ -14,13 +16,15 @@ user_can_access <- function(email, pool){
 
 
 
+
+#' @export
 permissions_server <- function(id){
 
   moduleServer(id, function(input, output, session) {
 
     permitted <- reactive({
 
-      permissions <- user_can_access(email = session$user, pool)
+      permissions <- user_can_access(email = session$user)
 
       if(nrow(permissions) == 0)
         showModal(modalDialog(title = "Unknown User", p("As we do not recogise your authorisation level we will put you into demo mode."),

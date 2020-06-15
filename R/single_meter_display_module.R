@@ -28,6 +28,8 @@ anomaly_chart <- function(sails){
 
 
 
+
+#' @export
 single_meter_display_UI <- function(id){
   ns <- NS(id)
 
@@ -84,6 +86,8 @@ single_meter_display_UI <- function(id){
 
 }
 
+
+#' @export
 single_meter_display_server <- function(id){
   moduleServer(id, function(input, output, session) {
 

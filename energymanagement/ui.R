@@ -32,7 +32,6 @@ dashtab <- {
 datatab <- {tabItem(
   tabName = "data",
   h2("Meter Statistics"),
- # events::single_row_selector_ui("stats"),
   verbatimTextOutput("user_info", placeholder = TRUE),
   verbatimTextOutput("credential_info", placeholder = TRUE),
   verbatimTextOutput("userdata")

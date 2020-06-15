@@ -1,3 +1,4 @@
+#' @export
 utility_server <- function(id){
   moduleServer(id, function(input, output, session) {
     #  Session Global ####
@@ -5,6 +6,7 @@ utility_server <- function(id){
   })
 }
 
+#' @export
 utility_UI <- function(id){
   ns <- NS(id)
   radioButtons(

@@ -17,6 +17,30 @@ dbq <- function(sql, ...){
   dbGetQuery(pool, statement = DBI::sqlInterpolate(.GlobalEnv$pool, sql, ... ))
 }
 
+
+meter_detail <- "SELECT o.id as oid, o.owner, pm.mid::text, pm.mpr, poi_id, pm.utility, pm.activity ,pm.intermediary_id, i.intermediary, pm.n , pm.nnz, pm.recent_zero,
+                               pm.latest_trend, pm.latest_duration, pm.prior_trend, pm.prior_duration, pm.big_trend, pm.big_duration, pm.summer_quartile, pm.winter_quartile,
+                               pm.convexity, pm.spearman, pm.madness, pm.power_to FROM v1.poi_meters pm, v1.poi poi, v1.owner o, v1.intermediary i
+                               WHERE poi.id = pm.poi_id AND o.id = poi.owner_id"
+#' @export
+read_meter_detail_by_mpr <- function(mpr){
+  print(paste("Reading MPR Detail", mpr))
+  dbq(paste(meter_detail,  "AND pm.mpr = ?mpr and i.id = pm.intermediary_id;"), mpr = mpr)
+}
+
+#' @export
+read_meter_detail_by_mid <- function(mid){
+  print(paste("Reading MID Detail", mid))
+  dbq(paste(meter_detail, "AND pm.mid = ?mid and i.id = pm.intermediary_id;"), mid = as.numeric(mid))
+}
+
+
+
+#' @export
+locations <- function()
+  dbq("SELECT *  FROM weather.location")
+
+
 #' @export
 owner_deferrals <- function(oid)
   dbq("SELECT oid::text as oid, mid::text as mid, until FROM v1.defer WHERE oid = ?oid", oid = oid)
