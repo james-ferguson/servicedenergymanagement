@@ -19,7 +19,7 @@ library(leaflet)
 library(knitr)
 library(kableExtra)
 library(leaflet.extras)
-devtools::install_github("james-ferguson/servicedenergymanagement")
+#devtools::install_github("james-ferguson/servicedenergymanagement")
 library(servicedenergymanagement)
 
 sourcerer <- function(){
