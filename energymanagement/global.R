@@ -19,8 +19,8 @@ library(leaflet)
 library(knitr)
 library(kableExtra)
 library(leaflet.extras)
-#devtools::install_github("james-ferguson/servicedenergymanagement")
-
+devtools::install_github("james-ferguson/servicedenergymanagement")
+library(servicedenergymanagement)
 
 sourcerer <- function(){
   #wd <- getwd()
@@ -30,7 +30,7 @@ sourcerer <- function(){
   sapply(paste0("~/servicedenergymanagement/R/",files.sources), source)
   #setwd(wd)
 }
-sourcerer()
+#sourcerer()
 
 pool <- get_pool()
 onStop(function() { poolClose(pool) })
