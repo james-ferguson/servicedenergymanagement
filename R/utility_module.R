@@ -1,6 +1,7 @@
 utility_server <- function(id){
   moduleServer(id, function(input, output, session) {
-    utility = reactive(input$utility)
+    #  Session Global ####
+    session$userData$utility = reactive(input$utility)
   })
 }
 

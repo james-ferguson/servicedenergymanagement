@@ -58,7 +58,7 @@ single_meter_detail_server <- function(id){
 
       md <- req(meter_detail())
       tagList(
-        h2(paste(md$utility, "Meter:", md$mpr, md$owner, paste0("[ref:",md$oid,"]"))),
+        h2(paste(req(session$userData$utility()), "Meter:", md$mpr, md$owner, paste0("[ref:",req(session$userData$oid()),"]"))),
         hr(),
         p(paste("Intermediary:" , md$intermediary, paste0("[ref:",md$intermediary_id,"]"))),
 

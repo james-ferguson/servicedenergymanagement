@@ -87,6 +87,6 @@ summarise_meter_days <- function(owner_utility_meter_days){
     summarise(mpr = first(mpr),
               expected = mean(expected, na.rm = TRUE),
               actual = mean(kw, na.rm = TRUE), .groups = 'drop') %>%
-    mutate(turndown = round(100 * actual / expected,1)) %>%
-    left_join(rz, by = "mid")
+    mutate(turndown = round(100 * actual / expected,1)) #%>%
+   # left_join(rz, by = "mid")
 }

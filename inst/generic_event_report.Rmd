@@ -4,7 +4,7 @@ output:
     toc: true
     toc_depth: 2
 params: 
-  owner: NULL
+  owner_name: NULL
   utility: NULL
   event: NULL
   title: NULL
@@ -33,13 +33,11 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE) #
 
 event = params$event
 event_start= event$start_date
-owner <- params$owner
-oid <- owner$id
+owner_name <- params$owner_name
 utility = params$utility
 
 event_start = event$start_date
 event_end = ifelse(is.na(event$end_date), Sys.Date(), event$end_date)
-owner_name = owner$owner
 event_name = event$name
 
   
@@ -81,7 +79,7 @@ colnames(x) <- c("# Meters", "# Increased", "# Decreased", "Actual Total (MWh)",
 
 ## Timeline of Impact
 
-This chart shows how actual  `r owner_name` consumption has changed relative to normal for the day of week and weather conditions since the event started on `r event_start` (the event period is indicated in green and the change is indicated by arrows).
+This chart shows how actual  `r params$owner_name` consumption has changed relative to normal for the day of week and weather conditions since the event started on `r event_start` (the event period is indicated in green and the change is indicated by arrows).
 
 ```{r ouhp, echo=FALSE, out.height="100%", out.width="90%"}
 params$owner_utility_history_plot

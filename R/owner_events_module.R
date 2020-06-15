@@ -47,12 +47,12 @@ owner_events_UI <- function(id){
 
 }
 
-owner_events_server <- function(id, owner, utility, ap){ # o oid owner match_ref
+owner_events_server <- function(id){
   moduleServer(id, function(input, output, session) {
     event_data <- reactiveVal()
-
-    chosen_event_data <- event_choice_server('ecm', owner, utility)
-    created_event_data <- event_creator_server('evc', owner, utility)
+    #session$userData$owner_name
+    chosen_event_data <- event_choice_server('ecm')
+    created_event_data <- event_creator_server('evc')
     observeEvent(chosen_event_data(), event_data(chosen_event_data()) )
     observeEvent(created_event_data(), event_data(created_event_data()) )
 
@@ -73,8 +73,7 @@ owner_events_server <- function(id, owner, utility, ap){ # o oid owner match_ref
       },
       content = function(file) {
         params <- req(event_data())
-        print(names(params))
-        params$title = paste("Event report", params$event$name, "<br>for", params$owner$owner)
+        params$title = paste("Event report", params$event$name, "<br>for", params$owner_name)
         print(paste("Content file", file))
         tempReport <- file.path(tempdir(), "generic_event_report.Rmd")
 

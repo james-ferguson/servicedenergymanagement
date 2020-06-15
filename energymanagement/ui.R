@@ -11,7 +11,7 @@ dashtab <- {
       title = tagList(icon("user-secret",p("Client Selection"))),
       width = 12,
       utility_UI("u"),
-      single_row_selector_ui("owner_table", height = 625),
+      owner_ui("owner_table", height = 625),
       status = "success", solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE),
     account_period_UI("ap"),
     box(
@@ -53,7 +53,7 @@ settingstab <- {tabItem(
   h3("Temperature"),
   checkboxInput("degrees_c_f", "Use Celsius (Unchecked = Fahrenheit)", value = TRUE),
   actionButton("save_settings", "Save / Update Changes"),
-  account_period_UI2('a')
+  account_period_UI2('ap')
 )}
 
 
@@ -83,7 +83,7 @@ body <- {
          '))
       )
     ),
-
+    shiny.info::info_value("session_info"),
     useShinyjs(),  #start as hidden
     div(
       id = "panelA",
@@ -99,6 +99,7 @@ body <- {
         pf_UI('pf'),
         nl_UI('nl'),
         nw_UI('nw'),
+        nt_UI('nt'),
         w_UI('w'),
         s_UI('s'),
         id_UI('id'),

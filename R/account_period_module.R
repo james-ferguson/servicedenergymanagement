@@ -6,8 +6,8 @@ kWh_kg_CO2g_UK <- function(x)
 co2_calculations <- function(period, utility){
   kwh=list(
     actual = round(24 * sum(period$kw, na.rm=TRUE)),
-    forecast =round( 24 *  sum(period$fit, na.rm=TRUE)),
-    waste = round(24 *  sum(period$kw-period$fit, na.rm=TRUE))
+    forecast =round( 24 *  sum(period$expected, na.rm=TRUE)), # ex fit
+    waste = round(24 *  sum(period$kw-period$expected, na.rm=TRUE)) # ditto
   )
   co2_convertor(utility, kwh)
 }
@@ -29,8 +29,10 @@ co2_convertor <- function(utility, kwh){
 }
 
 
-kWh_cash <- function(x, price, currency, digits = 0)
+kWh_cash <- function(x, price, currency, digits = 0){
   paste0(currency, " ", format(round(x*price, digits), big.mark   = ","))
+}
+
 
 coloured <- function(string, v, negate = FALSE){
   if(negate)
@@ -148,55 +150,56 @@ account_period_UI <- function(id){
 
 
 
-account_period_server <- function(id, o, u){# o has oid owner match_ref
+account_period_server <- function(id){
   moduleServer(
     id,
     function(input, output, session) {
 
-      observeEvent(
-        {o(); u()},{
-          u <- req(u())
-          owner <- req(o())
-          o <- owner$oid
-          x <- owner$owner
-          if(!ou_consolidation_exists(o, u, pool))
-            showModal(modalDialog(title="Utility Not Tracked !",
-                                  p("We have no consolidated data for ", x, u, ".") ,
-                                  p("At the risk of being forward - Is this something to consider ?" ),
-                                  easyClose = TRUE))
-        })
-
       ou_consolidation  <- reactive({
-        u <- req(u())
-        o <- req(o())
-        read_owner_utility_consolidation(o$oid, u)
+       # req(session$userData$oid)
+        ouc <- req(session$userData$owner_consolidation())
+
+       # ouc <- read_owner_utility_consolidation(req(session$userData$oid()), req(session$userData$utility()))
+        if(nrow(ouc)==0)
+          showModal(modalDialog(title="Utility Not Tracked !",
+                                p("We have no consolidated data for ",req(session$userData$utility()) , session$userData$owner_name(), ".") ,
+                                p("At the risk of being forward - Is this something to consider ?" ),
+                                easyClose = TRUE))
+        ouc
       })
 
-      observe(ou_consolidation(), priority = 1)
+
 
       ou_budget_consolidation  <- reactive({
-        u <- req(u())
-        o <- req(o())
-        read_owner_utility_budget_consolidation(o$oid, u)
+        req(session$userData$oid)
+        read_owner_utility_budget_consolidation(req(session$userData$oid()), req(session$userData$utility()))
       })
 
-      filtered_budget <- reactive(ou_budget_consolidation() %>% filter_history_by_period(input$period))
+      filtered_budget <- reactive({
 
-      budget_period <- reactive({ budget_co2_calculations(filtered_budget(), u()) })
+        req(ou_budget_consolidation()) %>% filter_history_by_period(input$period)
 
-      ou_time_selected <- reactive({
-        ou_consolidation() %>% filter_history_by_period(input$period)
       })
+
+      budget_period <- reactive( budget_co2_calculations(req(filtered_budget()),req(session$userData$utility())) )
+
+      ou_time_selected <- reactive(ou_consolidation() %>% filter_history_by_period(input$period) )
 
       acounting_period <- reactive({
-        utility <- req(u())
+        utility <- req(session$userData$utility())
         period <- ou_time_selected()
-        co2_calculations(period, utility)
+        cc <- co2_calculations(period, utility)
       })
 
+      observe({
+        input$gas_price
+        input$electricity_price
+      },
+
+      )
 
       price <- reactive({
-        u <- u()
+        u <- session$userData$utility()
         if(u == "Gas"){
           input$gas_price
         } else if(u == "Electricity"){
@@ -236,7 +239,7 @@ account_period_server <- function(id, o, u){# o has oid owner match_ref
 
       output$cash_forecast <- renderText({
         ap <- acounting_period()
-        kWh_cash(ap[[1]]$forecast, price(), input$currency, digits = 0)
+        kWh_cash(ap[[1]]$forecast, price(), input$currency, digits = 0) #
       })
       output$cash_actual <- renderText({
         ap <- acounting_period()
@@ -292,11 +295,6 @@ account_period_server <- function(id, o, u){# o has oid owner match_ref
       output$owner_utility_history_plot <- renderPlotly(ouhp())
 
       #### end charts ####
-      list(
-        oucp = oucp,
-        ouhp = ouhp,
-        ouehp = ouehp
-      )
-    }
+      }
   )
 }

@@ -3,13 +3,17 @@ nt_UI <- function(id){
   ns <- NS(id)
   tabItem(
     tabName = 'NT',
-    h2("No Trend")
-
+    h2("Meters On Target"),
+    table_meter_selection_ui(ns('meters'))
   )
 
 }
 
-nt_server <- function(id){ # o oid owner match_ref
+nt_server <- function(id, df){
   moduleServer(id, function(input, output, session) {
+    meter <- table_meter_selection_server('meters', df)
+
+    observeEvent(meter(), print(meter()))
   })
 }
+

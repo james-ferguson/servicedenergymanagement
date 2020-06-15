@@ -2,13 +2,16 @@ nd_UI <- function(id){
   ns <- NS(id)
   tabItem(
     tabName = 'ND',
-    h2("No Data")
-
+    h2("Meters with No AMR Data"),
+    table_meter_selection_ui(ns('meters'))
   )
 
 }
 
-nd_server <- function(id){ # o oid owner match_ref
+nd_server <- function(id, df){
   moduleServer(id, function(input, output, session) {
+    meter <- table_meter_selection_server('meters', df)
+
+    observeEvent(meter(), print(meter()))
   })
 }

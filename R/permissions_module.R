@@ -33,8 +33,6 @@ permissions_server <- function(id){
 
       print(paste("permitting", session$user))
 
-      print(permissions[1,])
-
       permissions
 
     })

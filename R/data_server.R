@@ -1,5 +1,62 @@
 
 
+data_server <- function(id){
+
+  moduleServer(
+    id,
+    function(input, output, session) {
+
+      session$userData$selected_meter <- reactiveVal()
+
+      #  Session Global ####
+      meters <-  reactive({
+        ms <- meter_statistics(req(session$userData$oid()), req(session$userData$utility()))
+        isolate(session$userData$selected_meter(NULL))
+        ms
+      })
+
+      session$userData$owner_utility_meter_days <- reactive({
+        meter_days_for_owner_utility(req(session$userData$oid()), req(session$userData$utility()))
+      })
+
+      session$userData$owner_consolidation <- reactive({
+        req(session$userData$owner_utility_meter_days() %>%
+        consolidate_owner_utility_meter_days() %>%
+          mutate(dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))))
+
+        #read_owner_utility_consolidation(req(session$userData$oid()), req(session$userData$utility()))  # Can be much faster
+      })
+
+      session$userData$selected_meter_history <- reactive({
+        meter <- session$userData$selected_meter()
+        if(!is.null(meter)){
+          shinyjs::show(id= "smd_panel", asis = TRUE)
+          req(session$userData$owner_utility_meter_days()) %>%
+            filter(mid ==meter$mid) %>%
+            mutate(
+              dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")),
+              waste = kw - expected
+              )
+        } else{
+          shinyjs::hide(id= "smd_panel", asis = TRUE)
+          NULL
+        }
+      })
+
+      observe({
+        session$userData$owner_consolidation()
+      }, priority = 11)
+
+      observe({
+        session$userData$selected_meter_history()
+      }, priority = 10)
+
+      meters
+
+    }
+  )
+}
+
 
 work_list <- function(universe){
 
@@ -50,67 +107,3 @@ work_list <- function(universe){
   )
 }
 
-
-data_server <- function(id, owner, utility){
-
-  moduleServer(
-    id,
-    function(input, output, session) {
-
-      #  Session Global ####
-      session$userData$all = reactiveVal()
-      session$userData$selected_meter <- reactiveVal()
-      session$userData$owner_utility_meter_days <- reactiveVal()
-      session$userData$owner_consolidation <- reactiveVal()
-      session$userData$selected_meter_history <- reactiveVal()
-
-      # Owner Utility Specific Meters
-
-      observeEvent({
-        utility()
-        owner()
-      },{
-        utility <- req(utility())
-        o = req(owner())
-        meters <- meter_statistics(o$oid, utility)
-        session$userData$all(meters)
-        session$userData$selected_meter(NULL)
-        md <- meter_days_for_owner_utility(o$oid, utility)
-        session$userData$owner_utility_meter_days(md)
-        session$userData$owner_consolidation(md %>%
-          consolidate_owner_utility_meter_days() %>%
-            mutate(dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))))
-
-      })
-
-      observeEvent({
-        session$userData$selected_meter()
-        session$userData$owner_utility_meter_days()
-      },
-      {
-        meter <- session$userData$selected_meter()
-
-
-
-        if(!is.null(meter)){
-          data <- req(session$userData$owner_utility_meter_days())
-
-          mh <- data[data$mid == meter$mid,]
-          df <- NULL
-          if(nrow(mh)>0)
-             df <- mutate(mh, dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")),
-                   waste = kw - expected )
-
-          session$userData$selected_meter_history(df)
-              shinyjs::show(id= "smd_panel", asis = TRUE)
-        } else{
-          session$userData$selected_meter_history(NULL)
-        }
-      })
-
-
-
-
-    }
-  )
-}

@@ -1,9 +1,38 @@
+#
+# v1.defer
+# oid bigint NOT NULL,
+# mid bigint NOT NULL,
+# until date,
+#
+# v1.meter_user_state
+# (
+#   oid bigint NOT NULL,
+#   mid bigint NOT NULL,
+#   user_state text,
+#
 
 
 #' @export
 dbq <- function(sql, ...){
   dbGetQuery(pool, statement = DBI::sqlInterpolate(.GlobalEnv$pool, sql, ... ))
 }
+
+#' @export
+owner_deferrals <- function(oid)
+  dbq("SELECT oid::text as oid, mid::text as mid, until FROM v1.defer WHERE oid = ?oid", oid = oid)
+
+#' @export
+owner_meter_user_states <- function(oid)
+  dbq("SELECT oid::text as oid, mid::text as mid, user_state FROM v1.defer WHERE oid = ?oid", oid = oid)
+
+#' @export
+upsert_owner_deferral <- function(oid, mid, until)
+  dbq("INSERT INTO v1.defer(oid, mid, until) VALUES(?oid, ?mid, ?until)  ON CONFLICT defer_reference_pkey DO UPDATE SET until = ?until;", oid = as.numeric(oid), mid = as.numeric(mid), until = until)
+
+#' @export
+upsert_meter_user_states <- function(oid, mid, user_state)
+  dbq("INSERT INTO v1.defer(oid, mid, user_state) VALUES(?oid, ?mid, ?user_state)  ON CONFLICT mus_reference_pkey DO UPDATE SET user_state = ?user_state;", oid = as.numeric(oid), mid = as.numeric(mid), until = until)
+
 
 #' @export
 meter_days_for_owner_utility <- function(oid, utility)

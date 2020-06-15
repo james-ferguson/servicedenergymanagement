@@ -13,16 +13,10 @@ event_creator_UI <- function(id){
   )
 }
 
-event_creator_server <- function(id, owner, utility){ # o oid owner match_ref
+event_creator_server <- function(id){
   moduleServer(id, function(input, output, session) {
 
     chosen_event <- reactiveVal()
-
-    oid <- reactive({
-      req(owner)
-      owner <- req(owner())
-      owner$oid
-    })
 
     ##### requirements
     #  integer NOT NULL, # Known
@@ -35,16 +29,6 @@ event_creator_server <- function(id, owner, utility){ # o oid owner match_ref
     # meter_count integer,
     # model boolean NOT NULL DEFAULT false,  # Define
     # Event Choice Module ####
-
-    owner_events <- reactive(read_owner_events_by_owner(req(oid())))
-
-    observeEvent(owner_events(), {
-      oe <- req(owner_events())
-      oec = list(oe$owner_event)
-      names(oec) <- paste(oe$name, "From", oe$start_date, "~",ifelse(is.na(oe$end_date), "Ongoing", oe$end_date) )
-      updateSelectInput(session, inputId ="owner_events_choice", choices = oec)
-    },ignoreNULL = TRUE)
-
 
     observeEvent(input$permanent,{
       if(input$permanent)
@@ -64,7 +48,7 @@ event_creator_server <- function(id, owner, utility){ # o oid owner match_ref
 
       event_data(
         tibble::tibble(
-          owner_id = req(oid()),
+          owner_id = req(session$userData$oid()),
           name = input$e_name,
           start_date = input$date_range[1],
           end_date = end,

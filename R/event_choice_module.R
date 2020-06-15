@@ -10,21 +10,15 @@ event_choice_UI <- function(id){
   )
 }
 
-event_choice_server <- function(id, owner, utility){ # o oid owner match_ref
+event_choice_server <- function(id){
   moduleServer(id, function(input, output, session) {
 
     chosen_event <- reactiveVal()
 
-    oid <- reactive({
-      req(owner)
-      owner <- req(owner())
-      chosen_event(NULL)
-      owner$oid
+    owner_events <- reactive({
+      req(session$userData$oid)
+      read_owner_events_by_owner(req(session$userData$oid()))
     })
-
-    # Event Choice Module ####
-
-    owner_events <- reactive(read_owner_events_by_owner(req(oid())))
 
     observeEvent(owner_events(), {
       oe <- req(owner_events())
@@ -47,8 +41,7 @@ event_choice_server <- function(id, owner, utility){ # o oid owner match_ref
 
     event_data <- reactive({
       event = req(chosen_event())
-      owner = req(owner())
-      utility = req(utility())
+      utility = req(session$userData$utility())
       owner_utility_event_meter_days = filter_meter_events(session$userData$owner_utility_meter_days(), event)
       displayable_consolidation = session$userData$owner_consolidation() %>% filter_history_by_period("2") %>%
         mutate(dow = factor(weekdays(ts), levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")))
@@ -62,8 +55,9 @@ event_choice_server <- function(id, owner, utility){ # o oid owner match_ref
       owner_utility_cusum_plot = event_consolidation %>% cumulative_waste_impact_chart() %>% maybe_show_event(event)
       owner_utility_history_plot = event_consolidation %>% event_impact_chart() %>% maybe_show_event(event)
       owner_utility_history_plot_in_context= displayable_consolidation %>% event_impact_chart() %>% maybe_show_event(event)
+      owner_name <- session$userData$owner_name()
       e <- list(
-        owner,
+        owner_name,
         utility,
         event,
         owner_utility_event_meter_days,
@@ -80,7 +74,7 @@ event_choice_server <- function(id, owner, utility){ # o oid owner match_ref
       )
 
       names(e) <- c(
-        "owner",
+        "owner_name",
         "utility",
         "event",
         "owner_utility_event_meter_days",

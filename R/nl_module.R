@@ -12,14 +12,14 @@ nl_UI <- function(id){
     actionBttn(ns("locate"), "Confirm Location",  icon = icon("map-signs"), color = "success"),
 
     helpText( "Please select one of the meters below and determine where it is on the 'Locations' map by clicking - location which will be shown below and marked on the map. If you are happy with the location for that meter, click confirm location and the meter location will be stored, a source of weather data arranged and assuming AMR collection functionaliy meter diagnosis will commence tonight."),
-              table_meter_selection_ui(ns('nl_meters'))
+              table_meter_selection_ui(ns('meters'))
   )
 
 }
 
-nl_server <- function(id){ # o oid owner match_ref
+nl_server <- function(id, df){
   moduleServer(id, function(input, output, session) {
-    table_meter_selection_server('nl_meters', 'NL')
+    table_meter_selection_server('meters', df)
 
     observeEvent(session$userData$selected_meter(), {
       m <- req(session$userData$selected_meter())

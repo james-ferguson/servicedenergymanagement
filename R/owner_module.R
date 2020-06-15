@@ -1,6 +1,6 @@
 
 
-meter_table <- function(data){
+owner_table <- function(data){
   DT::datatable(
     data,
     options = list( dom = "Bftipr",
@@ -27,27 +27,38 @@ meter_table <- function(data){
 }
 
 #' @export
-table_meter_selection_ui <- function(id, width = "100%", height = "auto"){
+owner_ui <- function(id, width = "100%", height = "auto"){
   ns <- NS(id)
   DT::dataTableOutput(ns("table"), width = "100%", height = height)
 }
 
 #' @export
-table_meter_selection_server <- function(id, meters){
-
+owner_server <- function(id, data){
   moduleServer(id, function(input, output, session) {
-    output$table <-  DT::renderDataTable({
-      m <- req(meters())
-      meter_table(m)
+
+    session$userData$owner_name = reactiveVal()
+    session$userData$oid = reactiveVal()
+
+    df_table <- reactive({
+      df <- req(data())
+      owner_table(df)
     })
+
+    output$table <-  DT::renderDataTable(req(df_table()))
 
     observeEvent(input$table_rows_selected,{
-      df <- meters()
-      m <- df[input$table_rows_selected,]
-      session$userData$selected_meter(m)
+      df <- data()
+      js$collapse("owner_selection_box")
+      owner <- df[input$table_rows_selected,]
+      session$userData$owner_name(owner$owner)
+      session$userData$oid(owner$oid)
     })
 
-    session$userData$selected_meter
+    observe({
+      print(session$userData$oid())
+    }, priority = 11)
+
+    session$userData$oid
 
   })
 }
