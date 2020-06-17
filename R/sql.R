@@ -1,20 +1,15 @@
-#
-# v1.defer
-# oid bigint NOT NULL,
-# mid bigint NOT NULL,
-# until date,
-#
-# v1.meter_user_state
-# (
-#   oid bigint NOT NULL,
-#   mid bigint NOT NULL,
-#   user_state text,
-#
 
+#' @export
+get_pool <- function(){
+  options(scipen = 12)
+  conn_args <- config::get("dataconnection")
+  pool::dbPool(odbc::odbc(), Driver = conn_args$driver, Server = conn_args$server, UID = conn_args$uid, PWD = conn_args$pwd,
+               Port = conn_args$port, Database = conn_args$database, BoolsAsChar = 0, MaxVarcharSize = 0)
+}
 
 #' @export
 dbq <- function(sql, ...){
-  dbGetQuery(pool, statement = DBI::sqlInterpolate(.GlobalEnv$pool, sql, ... ))
+  DBI::dbGetQuery(pool, statement = DBI::sqlInterpolate(.GlobalEnv$pool, sql, ... ))
 }
 
 
