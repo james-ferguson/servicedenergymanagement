@@ -170,6 +170,13 @@
       "Repository": "CRAN",
       "Hash": "cd711af60c47207a776213a368626369"
     },
+    "dbplyr": {
+      "Package": "dbplyr",
+      "Version": "1.4.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "2ba60a82dd9b6ca3cee0d8e2574cdf0e"
+    },
     "desc": {
       "Package": "desc",
       "Version": "1.2.0",
@@ -435,6 +442,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "b08edf378e0e38959a6983e3d5902795"
+    },
+    "pool": {
+      "Package": "pool",
+      "Version": "0.1.4.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f9c55743c1f7f677c018733459f31b21"
     },
     "praise": {
       "Package": "praise",
