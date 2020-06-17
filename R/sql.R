@@ -2,7 +2,7 @@
 
 #' @export
 dbq <- function(sql, ...){
-  dbGetQuery(conn, statement = sqlInterpolate(.GlobalEnv$pool, sql, ... ))
+  dbGetQuery(conn, statement = sqlInterpolate(.GlobalEnv$conn, sql, ... ))
 }
 
 
