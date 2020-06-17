@@ -1,11 +1,4 @@
 
-#' @export
-get_pool <- function(){
-  options(scipen = 12)
-  conn_args <- config::get("dataconnection")
-  pool::dbPool(odbc::odbc(), Driver = conn_args$driver, Server = conn_args$server, UID = conn_args$uid, PWD = conn_args$pwd,
-               Port = conn_args$port, Database = conn_args$database, BoolsAsChar = 0, MaxVarcharSize = 0)
-}
 
 #' @export
 dbq <- function(sql, ...){
@@ -28,8 +21,6 @@ read_meter_detail_by_mid <- function(mid){
   print(paste("Reading MID Detail", mid))
   dbq(paste(meter_detail, "AND pm.mid = ?mid and i.id = pm.intermediary_id;"), mid = as.numeric(mid))
 }
-
-
 
 #' @export
 locations <- function()

@@ -24,7 +24,7 @@ chart <- function(data = NULL, ...){
     p <- plot_ly(data, colors = cols,...)
   else
     p <-  plot_ly(colors = cols,...)
-  config(p,  displaylogo = FALSE, modeBarButtonsToRemove = c("sendDataToCloud", "lasso2d", "select2d", "pan2d", "zoomIn2d", "zoomOut2d")) %>%
+   plotly::config(p,  displaylogo = FALSE, modeBarButtonsToRemove = c("sendDataToCloud", "lasso2d", "select2d", "pan2d", "zoomIn2d", "zoomOut2d")) %>%
    plotly::layout(font = f, margin = m)
 }
 

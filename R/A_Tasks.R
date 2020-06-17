@@ -42,19 +42,6 @@
 ## Check modelling / Noise display
 
 
-# Infrastructure
-
-# "permissions_module.R"
-# "chart_utils.R"
-# "manipulations.R"
-# "utility_module.R"
-# "meter_work_module.R"
-# "single_row_selector_module.R"
-# "sql.R"
-# "pool.R"
-# "package.R"
-
-
 
 # Common Functions - Show Location
 # View
